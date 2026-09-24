@@ -1818,12 +1818,22 @@ app.get('/api/user/me', (req, res) => {
     // 从数据库读取最新角色与昵称，避免令牌过期前角色/昵称变更不生效
     const db = loadDB();
     if (decoded.role === 'admin' && decoded.username === db.admin.username) {
-      return res.json({ username: decoded.username, role: 'admin', nickname: '' });
+      const result = { username: decoded.username, role: 'admin', nickname: '' };
+      const approvedRequest = (db.genealogyPasswordRequests || []).find(function (r) {
+        return r.username === decoded.username && r.status === 'approved' && r.approvedPassword;
+      });
+      if (approvedRequest) result.genealogyPassword = approvedRequest.approvedPassword;
+      return res.json(result);
     }
     const user = (db.users || []).find(function (u) { return u.username === decoded.username; });
     if (!user) return res.json({ username: decoded.username, role: decoded.role || 'user', nickname: '' });
     if (user.disabled) return res.status(403).json({ error: '该账号已被禁用' });
-    res.json({ username: user.username, role: user.role === 'admin' ? 'admin' : 'user', nickname: user.nickname || '' });
+    const result = { username: user.username, role: user.role === 'admin' ? 'admin' : 'user', nickname: user.nickname || '' };
+    const approvedRequest = (db.genealogyPasswordRequests || []).find(function (r) {
+      return r.username === decoded.username && r.status === 'approved' && r.approvedPassword;
+    });
+    if (approvedRequest) result.genealogyPassword = approvedRequest.approvedPassword;
+    res.json(result);
   } catch (e) {
     res.status(401).json({ error: '登录令牌无效' });
   }

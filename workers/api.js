@@ -422,9 +422,9 @@ async function handleUsers(request, env, path, method) {
     if (user.role === 'admin' && user.username === (env.ADMIN_USERNAME || 'admin')) {
       const result = { username: user.username, role: 'admin', nickname: '' };
       const approvedRequest = (db.genealogyPasswordRequests || []).find(
-        r => r.username === user.username && r.status === 'approved' && r.password
+        r => r.username === user.username && r.status === 'approved' && r.approvedPassword
       );
-      if (approvedRequest) result.genealogyPassword = approvedRequest.password;
+      if (approvedRequest) result.genealogyPassword = approvedRequest.approvedPassword;
       return json(result);
     }
     // 普通用户从数据库读取最新信息
@@ -438,10 +438,10 @@ async function handleUsers(request, env, path, method) {
     };
     // 查找用户已批准的族谱密码申请
     const approvedRequest = (db.genealogyPasswordRequests || []).find(
-      r => r.username === user.username && r.status === 'approved' && r.password
+      r => r.username === user.username && r.status === 'approved' && r.approvedPassword
     );
     if (approvedRequest) {
-      result.genealogyPassword = approvedRequest.password;
+      result.genealogyPassword = approvedRequest.approvedPassword;
     }
     return json(result);
   }
