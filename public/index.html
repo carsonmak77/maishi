@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>麦氏乡村 - 麦氏乡村网站展示</title>
+  <meta name="description" content="麦氏乡村网站展示——记录麦氏家族族谱传承、乡村风貌与乡亲故事。">
+  <link rel="stylesheet" href="css/style.css?v=20260909v1">
+  <!-- 首屏优化：预加载合并接口，一次请求获取 settings + meta -->
+  <link rel="preload" href="/api/bootstrap" as="fetch" crossorigin="anonymous">
+  <script>
+    (function() {
+      var themeColor = localStorage.getItem('themeColor') || 'green';
+      var darkMode = localStorage.getItem('darkMode') || 'light';
+      var lang = localStorage.getItem('language') || 'zh';
+      var root = document.documentElement;
+      var colors = {
+        green: ['#07C160', '#06ad56', '#e8f8f0'],
+        blue: ['#1890ff', '#40a9ff', '#e6f7ff'],
+        purple: ['#722ed1', '#9254de', '#f9f0ff'],
+        orange: ['#fa8c16', '#ffa940', '#fff7e6'],
+        red: ['#f5222d', '#ff4d4f', '#fff1f0'],
+        cyan: ['#13c2c2', '#36cfc9', '#e6fffb']
+      };
+      var c = colors[themeColor] || colors.green;
+      root.style.setProperty('--theme-primary', c[0]);
+      root.style.setProperty('--theme-primary-hover', c[1]);
+      root.style.setProperty('--theme-primary-light', c[2]);
+      root.setAttribute('data-theme-color', themeColor);
+      if (darkMode === 'dark') root.setAttribute('data-theme', 'dark');
+      root.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    })();
+  </script>
+</head>
+<body>
+  <!-- 顶部导航栏 -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="logo site-logo" onclick="window.location.href='index.html'"><span class="site-logo-text">麦氏乡村</span></div>
+      <div class="nav-links">
+        <a href="index.html" class="active">主页</a>
+        <a href="genealogy.html">族谱</a>
+        <a href="friends.html">朋友们</a>
+        <a href="about.html">关于</a>
+      </div>
+      <div class="navbar-actions">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="搜索文章..." autocomplete="off">
+          <button class="search-btn" id="searchBtn" aria-label="搜索">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="auth-actions" id="authActions">
+          <a class="auth-link" href="login.html">登录</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 分类筛选标签栏 -->
+  <div class="category-bar">
+    <div class="category-bar-inner" id="categoryBar">
+      <!-- 分类标签由 JS 动态渲染 -->
+    </div>
+  </div>
+
+  <!-- 主内容区 -->
+  <main class="container has-category-bar" id="articles">
+    <section class="announcement-section" id="announcementSection">
+      <!-- 网站公告由 JS 动态渲染 -->
+    </section>
+
+    <!-- 广告位：首页顶部横幅 -->
+    <div class="ad-slot" data-position="home_top" data-format="banner" id="adHomeTop"></div>
+
+    <div id="app" class="post-list" data-home-only="false">
+      <!-- 文章列表由 JS 动态渲染 -->
+    </div>
+  </main>
+
+  <!-- 主页留言区 -->
+  <!-- 广告位：首页底部横幅 -->
+  <div class="ad-slot" data-position="home_bottom" data-format="banner" id="adHomeBottom"></div>
+
+  <section class="container">
+    <div class="comment-section" id="homeCommentSection" data-target-type="home">
+      <!-- 主页留言由 JS 动态渲染 -->
+    </div>
+  </section>
+
+  <!-- 底部 footer -->
+  <footer class="footer">
+    <!-- 底部工具栏 -->
+    <div class="footer-toolbar">
+      <button class="toolbar-btn" id="themeColorBtn" title="主题颜色">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="13.5" cy="6.5" r=".5"/>
+          <circle cx="17.5" cy="10.5" r=".5"/>
+          <circle cx="8.5" cy="7.5" r=".5"/>
+          <circle cx="6.5" cy="12.5" r=".5"/>
+          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+        </svg>
+      </button>
+      <button class="toolbar-btn" id="languageBtn" title="语言">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </button>
+      <button class="toolbar-btn" id="darkModeBtn" title="夜间模式">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+    </div>
+  </footer>
+
+  <!-- 手机端底部导航 -->
+  <nav class="mobile-tabbar" aria-label="手机端底部导航">
+    <a class="mobile-tabbar-item" href="index.html" data-tab="home">
+      <span class="mobile-tabbar-icon">⌂</span>
+      <span>主页</span>
+    </a>
+    <a class="mobile-tabbar-item" href="genealogy.html" data-tab="genealogy">
+      <span class="mobile-tabbar-icon">▲</span>
+      <span>族谱</span>
+    </a>
+    <a class="mobile-tabbar-item" href="friends.html" data-tab="friends">
+      <span class="mobile-tabbar-icon">♡</span>
+      <span>朋友们</span>
+    </a>
+    <a class="mobile-tabbar-item" href="about.html" data-tab="about">
+      <span class="mobile-tabbar-icon">○</span>
+      <span>关于</span>
+    </a>
+  </nav>
+
+  <script defer src="js/main.js?v=20260823v6"></script>
+  <script defer src="js/toolbar.js"></script>
+  <script defer src="js/ads.js?v=20260908v1"></script>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人中心 - 麦氏乡村</title>
+  <link rel="stylesheet" href="css/style.css?v=20260909v1">
+  <link rel="stylesheet" href="css/dz-editor.css">
+  <script>
+    (function() {
+      var themeColor = localStorage.getItem('themeColor') || 'green';
+      var darkMode = localStorage.getItem('darkMode') || 'light';
+      var lang = localStorage.getItem('language') || 'zh';
+      var root = document.documentElement;
+      var colors = {
+        green: ['#07C160', '#06ad56', '#e8f8f0'],
+        blue: ['#1890ff', '#40a9ff', '#e6f7ff'],
+        purple: ['#722ed1', '#9254de', '#f9f0ff'],
+        orange: ['#fa8c16', '#ffa940', '#fff7e6'],
+        red: ['#f5222d', '#ff4d4f', '#fff1f0'],
+        cyan: ['#13c2c2', '#36cfc9', '#e6fffb']
+      };
+      var c = colors[themeColor] || colors.green;
+      root.style.setProperty('--theme-primary', c[0]);
+      root.style.setProperty('--theme-primary-hover', c[1]);
+      root.style.setProperty('--theme-primary-light', c[2]);
+      root.setAttribute('data-theme-color', themeColor);
+      if (darkMode === 'dark') root.setAttribute('data-theme', 'dark');
+      root.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    })();
+  </script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="logo site-logo" onclick="window.location.href='index.html'"><span class="site-logo-text">麦氏乡村</span></div>
+      <div class="nav-links">
+        <a href="index.html">主页</a>
+        <a href="genealogy.html">族谱</a>
+        <a href="friends.html">朋友们</a>
+        <a href="about.html">关于</a>
+      </div>
+      <div class="navbar-actions">
+        <div class="auth-actions" id="authActions">
+          <a class="auth-link" href="login.html">登录</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container page-container profile-page">
+    <section class="auth-card profile-card">
+      <p class="page-kicker">Profile</p>
+      <h1>个人中心</h1>
+      <div class="profile-avatar-large" id="profileAvatarLarge">U</div>
+      <p class="profile-name" id="profileName">未登录</p>
+      <p class="auth-card-desc">你可以在这里管理昵称、向网站投稿。投稿提交后会进入后台审核，管理员通过后才会显示在前台文章列表。</p>
+      <div class="profile-actions">
+        <a class="btn-primary" href="index.html">返回主页</a>
+        <a class="auth-link" href="friends.html">申请友链</a>
+      </div>
+    </section>
+
+    <section class="profile-submission-panel">
+      <div class="section-title-row">
+        <div>
+          <h2>我的昵称</h2>
+          <span>设置一个昵称，方便在留言区和投稿中展示。</span>
+        </div>
+      </div>
+      <form class="submission-form" id="nicknameForm" autocomplete="off">
+        <div class="form-group-public">
+          <label>昵称</label>
+          <input type="text" id="nicknameInput" maxlength="20" placeholder="请输入昵称（最多20个字符）">
+        </div>
+        <div class="friend-form-actions">
+          <button type="submit" class="btn-primary" id="saveNicknameBtn">保存昵称</button>
+          <span class="friend-submit-msg" id="nicknameMsg"></span>
+        </div>
+      </form>
+    </section>
+
+    <section class="profile-submission-panel">
+      <div class="section-title-row">
+        <div>
+          <h2>我要投稿</h2>
+          <span>审核通过后，文章会显示在前台文章列表和首页。</span>
+        </div>
+      </div>
+      <form class="submission-form" id="submissionForm" autocomplete="off">
+        <div class="form-group-public">
+          <label>标题 <span>*</span></label>
+          <input type="text" id="submissionTitle" maxlength="80" placeholder="请输入文章标题" required>
+        </div>
+        <div class="form-row-public">
+          <div class="form-group-public">
+            <label>分类</label>
+            <input type="text" id="submissionCategory" maxlength="30" placeholder="例如：投稿">
+          </div>
+          <div class="form-group-public">
+            <label>标签</label>
+            <input type="text" id="submissionTags" placeholder="多个标签用逗号分隔">
+          </div>
+        </div>
+        <div class="form-group-public">
+          <label>摘要</label>
+          <textarea class="public-textarea" id="submissionSummary" maxlength="300" placeholder="请输入文章摘要（选填）"></textarea>
+        </div>
+        <div class="form-group-public">
+          <label>正文 <span>*</span></label>
+          <div class="editor-toolbar-public">
+            <span class="form-help-public">已切换为与后台一致的富文本编辑器，支持排版、表情、代码块、图片等。图片大小不超过 5MB。</span>
+          </div>
+          <!-- 隐藏的原始 textarea，编辑器内容会同步到这里，保证表单提交兼容 -->
+          <textarea class="public-textarea public-content-textarea" id="submissionContent" placeholder="请输入投稿正文" hidden></textarea>
+          <!-- DZ 论坛风格编辑器渲染容器 -->
+          <div id="dzEditorWrap"></div>
+        </div>
+        <div class="friend-form-actions">
+          <button type="submit" class="btn-primary" id="submissionSubmitBtn">提交投稿</button>
+          <span class="friend-submit-msg" id="submissionMsg"></span>
+        </div>
+      </form>
+    </section>
+
+    <section class="profile-submission-panel">
+      <div class="section-title-row">
+        <div>
+          <h2>我的投稿</h2>
+          <span>查看投稿审核状态。</span>
+        </div>
+        <button class="auth-link" type="button" id="refreshSubmissionsBtn">刷新</button>
+      </div>
+      <div class="submission-list" id="submissionList">
+        <div class="loading"><div class="spinner"></div><p>正在加载投稿...</p></div>
+      </div>
+    </section>
+
+    <section class="profile-submission-panel">
+      <div class="section-title-row">
+        <div>
+          <h2>我的族谱密码</h2>
+          <span>查看族谱访问密码的申请状态和已通过的密码。</span>
+        </div>
+        <button class="auth-link" type="button" id="refreshGenoPwdBtn">刷新</button>
+      </div>
+      <div id="genoPwdRequestList">
+        <div class="loading"><div class="spinner"></div><p>正在加载...</p></div>
+      </div>
+    </section>
+
+    <section class="profile-submission-panel">
+      <div class="section-title-row">
+        <div>
+          <h2>我的点赞</h2>
+          <span>在文章详情页点赞后，文章会出现在这里。</span>
+        </div>
+        <button class="auth-link" type="button" id="refreshLikesBtn">刷新</button>
+      </div>
+      <div class="interaction-list" id="myLikesList">
+        <div class="loading"><div class="spinner"></div><p>正在加载点赞...</p></div>
+      </div>
+    </section>
+
+    <section class="profile-submission-panel">
+      <div class="section-title-row">
+        <div>
+          <h2>我的收藏</h2>
+          <span>在文章详情页收藏后，文章会出现在这里。</span>
+        </div>
+        <button class="auth-link" type="button" id="refreshFavoritesBtn">刷新</button>
+      </div>
+      <div class="interaction-list" id="myFavoritesList">
+        <div class="loading"><div class="spinner"></div><p>正在加载收藏...</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-toolbar">
+      <button class="toolbar-btn" id="themeColorBtn" title="主题颜色">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="13.5" cy="6.5" r=".5"/>
+          <circle cx="17.5" cy="10.5" r=".5"/>
+          <circle cx="8.5" cy="7.5" r=".5"/>
+          <circle cx="6.5" cy="12.5" r=".5"/>
+          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+        </svg>
+      </button>
+      <button class="toolbar-btn" id="languageBtn" title="语言">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </button>
+      <button class="toolbar-btn" id="darkModeBtn" title="夜间模式">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+    </div>
+  </footer>
+
+  <nav class="mobile-tabbar" aria-label="手机端底部导航">
+    <a class="mobile-tabbar-item" href="index.html" data-tab="home">
+      <span class="mobile-tabbar-icon">⌂</span>
+      <span>主页</span>
+    </a>
+    <a class="mobile-tabbar-item" href="genealogy.html" data-tab="genealogy">
+      <span class="mobile-tabbar-icon">▲</span>
+      <span>族谱</span>
+    </a>
+    <a class="mobile-tabbar-item" href="friends.html" data-tab="friends">
+      <span class="mobile-tabbar-icon">♡</span>
+      <span>朋友们</span>
+    </a>
+    <a class="mobile-tabbar-item" href="about.html" data-tab="about">
+      <span class="mobile-tabbar-icon">○</span>
+      <span>关于</span>
+    </a>
+  </nav>
+
+  <script defer src="js/dz-editor.js"></script>
+  <script defer src="js/main.js?v=20260823v6"></script>
+  <script defer src="js/toolbar.js"></script>
+</body>
+</html>

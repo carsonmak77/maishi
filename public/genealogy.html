@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>族谱 - 麦氏乡村</title>
+  <script>
+    // 强制清除所有缓存并重新加载
+    (function() {
+      var v = '20260909v3';
+      var stored = sessionStorage.getItem('genoVersion');
+      console.log('[缓存检查] stored=' + stored + ', current=' + v);
+      if (stored !== v) {
+        sessionStorage.setItem('genoVersion', v);
+        // 清除所有缓存
+        if (typeof caches !== 'undefined' && caches && caches.keys) {
+          caches.keys().then(function(names) {
+            names.forEach(function(n) { caches.delete(n); });
+            console.log('[缓存清除] 已清除 ' + names.length + ' 个缓存');
+          });
+        }
+        // 注销所有 service worker
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            registrations.forEach(function(reg) { reg.unregister(); });
+            console.log('[Service Worker] 已注销 ' + registrations.length + ' 个');
+          });
+        }
+        // 强制硬刷新
+        console.log('[缓存刷新] 强制重新加载...');
+        location.reload(true);
+      }
+    })();
+  </script>
+  <meta name="description" content="麦氏乡村族谱——以大树图谱呈现自始祖麦铁杖至当代麦邦杰的二十三代家族传承，SVG动态连接线，点击卡片查看详细信息。">
+  <link rel="stylesheet" href="css/style.css?t=20260909v3">
+  <link rel="preload" href="/api/settings" as="fetch" crossorigin="anonymous">
+  <script>
+    (function() {
+      var themeColor = localStorage.getItem('themeColor') || 'green';
+      var darkMode = localStorage.getItem('darkMode') || 'light';
+      var lang = localStorage.getItem('language') || 'zh';
+      var root = document.documentElement;
+      var colors = {
+        green: ['#07C160', '#06ad56', '#e8f8f0'],
+        blue: ['#1890ff', '#40a9ff', '#e6f7ff'],
+        purple: ['#722ed1', '#9254de', '#f9f0ff'],
+        orange: ['#fa8c16', '#ffa940', '#fff7e6'],
+        red: ['#f5222d', '#ff4d4f', '#fff1f0'],
+        cyan: ['#13c2c2', '#36cfc9', '#e6fffb']
+      };
+      var c = colors[themeColor] || colors.green;
+      root.style.setProperty('--theme-primary', c[0]);
+      root.style.setProperty('--theme-primary-hover', c[1]);
+      root.style.setProperty('--theme-primary-light', c[2]);
+      root.setAttribute('data-theme-color', themeColor);
+      if (darkMode === 'dark') root.setAttribute('data-theme', 'dark');
+      root.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    })();
+  </script>
+</head>
+<body>
+  <!-- 顶部导航栏 -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="logo site-logo" onclick="window.location.href='index.html'"><span class="site-logo-text">麦氏乡村</span></div>
+      <div class="nav-links">
+        <a href="index.html">主页</a>
+        <a href="genealogy.html" class="active">族谱</a>
+        <a href="friends.html">朋友们</a>
+        <a href="about.html">关于</a>
+      </div>
+      <div class="navbar-actions">
+        <div class="auth-actions" id="authActions">
+          <a class="auth-link" href="login.html">登录</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主内容区 -->
+  <main class="container page-container" id="genealogyPage">
+
+    <!-- 族谱密码访问门 -->
+    <section class="geno-gate" id="genoGate" style="display:none">
+      <div class="geno-gate-card">
+        <div class="geno-gate-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <h2 class="geno-gate-title">族谱访问需要密码</h2>
+        <p class="geno-gate-desc">麦氏族谱为家族私密内容，请输入管理员提供的访问密码。密码可能有时效限制，过期后请联系管理员获取新密码。</p>
+        <form id="genoGateForm" class="front-auth-form">
+          <div class="form-group-public">
+            <input type="password" id="genoGatePassword" placeholder="请输入访问密码" autocomplete="off" required>
+          </div>
+          <button type="submit" class="btn-primary auth-submit-btn" id="genoGateBtn">验证密码</button>
+        </form>
+        <div class="front-auth-msg" id="genoGateMsg"></div>
+        <div class="geno-gate-actions">
+          <a href="javascript:void(0)" id="genoGateRequestBtn">没有密码？申请访问</a>
+        </div>
+        <!-- 申请密码表单 -->
+        <div class="geno-gate-request" id="genoGateRequestForm" style="display:none">
+          <h3 class="geno-gate-request-title">申请访问密码</h3>
+          <p class="geno-gate-request-desc">填写以下信息，管理员审核后将为您提供访问密码。</p>
+          <form id="genoRequestForm" class="front-auth-form">
+            <div class="form-group-public">
+              <input type="text" id="genoRequestName" placeholder="您的姓名" required>
+            </div>
+            <div class="form-group-public">
+              <input type="text" id="genoRequestContact" placeholder="联系方式（手机/邮箱）" required>
+            </div>
+            <div class="form-group-public">
+              <textarea id="genoRequestReason" rows="2" placeholder="申请理由（如：麦氏后裔、研究需求等）"></textarea>
+            </div>
+            <button type="submit" class="btn-primary auth-submit-btn" id="genoRequestBtn">提交申请</button>
+          </form>
+          <div class="front-auth-msg" id="genoRequestMsg"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 族谱主内容（密码验证后显示） -->
+    <div id="genoContent" style="display:none">
+    <!-- 广告位：族谱页顶部 -->
+    <div class="ad-slot" data-position="genealogy_top" data-format="banner" id="adGenealogyTop"></div>
+
+    <section class="page-hero genealogy-hero">
+      <p class="page-kicker" id="genealogyKicker">Genealogy</p>
+      <h1 id="genealogyTitle">麦氏族谱</h1>
+      <p id="genealogySubtitle">苏式世系视图呈现自始祖麦铁杖至当代麦邦杰的二十三代家族传承。PC端以大树图谱展示，手机端自动切换为缩进列表，方便浏览全族。点击人物卡片可查看齿录信息。</p>
+    </section>
+
+    <section class="genealogy-intro" id="genealogyIntro">
+      <div class="spinner"></div>
+    </section>
+
+    <!-- 统一工具栏：展开/折叠 + 分支筛选 + 搜索 + 添加 -->
+    <section class="genealogy-toolbar">
+      <button class="btn-link genealogy-expand-all" type="button">全部展开</button>
+      <button class="btn-link genealogy-collapse-all" type="button">全部折叠</button>
+      <button class="btn-link geno-add-btn" type="button" id="genoAddShowBtn">添加族谱人物</button>
+      <span class="genealogy-count" id="genealogyCount"></span>
+      <!-- 分支筛选 -->
+      <div class="geno-branch-filter-inline">
+        <select id="genoBranchFilter" class="geno-branch-filter">
+          <option value="">全部分支</option>
+        </select>
+      </div>
+      <!-- 搜索框 -->
+      <div class="geno-search-inline">
+        <svg class="geno-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="genoSearchInput" class="geno-search-input" placeholder="搜索族谱人名..." autocomplete="off">
+        <button type="button" class="btn-link geno-search-btn" id="genoSearchBtn">搜索</button>
+        <button type="button" class="geno-search-clear" id="genoSearchClear" style="display:none">&times;</button>
+      </div>
+    </section>
+
+    <div class="geno-search-results" id="genoSearchResults" style="display:none"></div>
+
+    <section class="genealogy-pyramid" id="genealogyPyramid">
+      <div class="loading"><div class="spinner"></div><p>正在加载族谱...</p></div>
+    </section>
+    <p class="geno-scroll-hint">← 左右滑动查看完整族谱 · 双指缩放查看细节 →</p>
+
+    <!-- 用户提交族谱人物（需登录，提交后待管理员审核） -->
+    <section class="genealogy-submit-section" id="genealogySubmitSection" style="display:none">
+      <div class="auth-card geno-submit-card">
+        <h2 class="geno-submit-title">添加族谱人物</h2>
+        <p class="geno-submit-hint" id="genoSubmitHint">您提交的人物需经管理员审核通过后方可在族谱中显示。</p>
+        <form id="genoSubmitForm" class="front-auth-form" autocomplete="off">
+          <div class="geno-submit-row">
+            <div class="form-group-public geno-submit-field">
+              <label>姓名 <span class="required">*</span></label>
+              <input type="text" id="genoSubmitName" maxlength="30" placeholder="请输入人物姓名" required>
+            </div>
+            <div class="form-group-public geno-submit-field">
+              <label>世代</label>
+              <input type="number" id="genoSubmitGeneration" min="1" max="99" value="1" placeholder="第几世">
+            </div>
+          </div>
+          <div class="geno-submit-row">
+            <div class="form-group-public geno-submit-field">
+              <label>父亲</label>
+              <select id="genoSubmitParent"><option value="">无（始祖）</option></select>
+            </div>
+            <div class="form-group-public geno-submit-field">
+              <label>配偶</label>
+              <input type="text" id="genoSubmitSpouse" maxlength="30" placeholder="配偶姓名">
+            </div>
+          </div>
+          <div class="geno-submit-row">
+            <div class="form-group-public geno-submit-field">
+              <label>称谓</label>
+              <input type="text" id="genoSubmitTitleField" maxlength="20" placeholder="如：始祖、二世祖">
+            </div>
+            <div class="form-group-public geno-submit-field">
+              <label>生辰</label>
+              <input type="text" id="genoSubmitBirthDate" maxlength="30" placeholder="如：558年">
+            </div>
+          </div>
+          <div class="form-group-public geno-submit-field">
+            <label>年代</label>
+            <input type="text" id="genoSubmitEra" maxlength="30" placeholder="如：隋代、唐代">
+          </div>
+          <div class="form-group-public geno-submit-field">
+            <label>简介</label>
+            <textarea id="genoSubmitIntro" rows="3" placeholder="请输入人物简介"></textarea>
+          </div>
+          <div class="geno-submit-actions">
+            <button type="submit" class="btn-primary auth-submit-btn" id="genoSubmitBtn">提交审核</button>
+            <button type="button" class="btn-link geno-submit-toggle" id="genoSubmitToggle">收起</button>
+          </div>
+        </form>
+        <div class="front-auth-msg" id="genoSubmitStatus"></div>
+      </div>
+    </section>
+
+    <!-- 登录提示（未登录时显示） -->
+    <section class="genealogy-login-hint" id="genealogyLoginHint" style="display:none">
+      <p>想添加族谱人物？<a href="login.html">登录</a> 后即可提交，经管理员审核后显示。</p>
+    </section>
+    </div><!-- /genoContent -->
+  </main>
+
+  <!-- 即时初始化密码门 + 事件绑定（不等待 main.js，避免闪烁和点击无反应） -->
+  <script>
+    (function () {
+      /* 标记已初始化，防止 main.js 重复绑定（必须在任何 return 之前设置） */
+      window.__genoGateReady = true;
+
+      var gate = document.getElementById('genoGate');
+      var content = document.getElementById('genoContent');
+      if (!gate || !content) return;
+
+      var token = localStorage.getItem('frontToken');
+      var role = localStorage.getItem('frontRole');
+      var verified = sessionStorage.getItem('genoVerified') === 'true';
+
+      /* 管理员或已验证 → 直接显示内容 */
+      if ((token && role === 'admin') || verified) {
+        gate.style.display = 'none';
+        content.style.display = 'block';
+        return;
+      }
+
+      /* 显示密码门 */
+      gate.style.display = 'block';
+      content.style.display = 'none';
+
+      /* ---- 密码验证表单 ---- */
+      var gateForm = document.getElementById('genoGateForm');
+      var gateMsg = document.getElementById('genoGateMsg');
+      if (gateForm) {
+        gateForm.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          var password = document.getElementById('genoGatePassword').value;
+          var btn = document.getElementById('genoGateBtn');
+          if (btn) { btn.disabled = true; btn.textContent = '验证中...'; }
+          if (gateMsg) { gateMsg.textContent = ''; gateMsg.className = 'front-auth-msg'; }
+          try {
+            var res = await fetch('/api/genealogy/verify-password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ password: password })
+            });
+            var data = await res.json();
+            if (!res.ok) {
+              /* 密码过期时清除会话验证状态，提示重新获取 */
+              if (data.expired) {
+                sessionStorage.removeItem('genoVerified');
+                throw new Error(data.error || '密码已过期，请联系管理员获取新密码');
+              }
+              throw new Error(data.error || '密码验证失败');
+            }
+            sessionStorage.setItem('genoVerified', 'true');
+            gate.style.display = 'none';
+            content.style.display = 'block';
+            // 密码验证通过后重新渲染大树图谱（确保布局计算正确）
+            if (typeof loadGenealogy === 'function') {
+              setTimeout(function () { loadGenealogy(); }, 50);
+            }
+          } catch (err) {
+            if (gateMsg) { gateMsg.textContent = err.message; gateMsg.className = 'front-auth-msg error'; }
+          } finally {
+            if (btn) { btn.disabled = false; btn.textContent = '验证密码'; }
+          }
+        });
+      }
+
+      /* ---- 申请密码链接：切换显示/隐藏 ---- */
+      var requestBtn = document.getElementById('genoGateRequestBtn');
+      var requestForm = document.getElementById('genoGateRequestForm');
+      if (requestBtn && requestForm) {
+        requestBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          if (requestForm.style.display === 'block') {
+            requestForm.style.display = 'none';
+          } else {
+            requestForm.style.display = 'block';
+            requestForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        });
+      }
+
+      /* ---- 提交申请表单 ---- */
+      var reqForm = document.getElementById('genoRequestForm');
+      var reqMsg = document.getElementById('genoRequestMsg');
+      if (reqForm) {
+        reqForm.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          var name = document.getElementById('genoRequestName').value.trim();
+          var contact = document.getElementById('genoRequestContact').value.trim();
+          var reason = document.getElementById('genoRequestReason').value.trim();
+          var btn = document.getElementById('genoRequestBtn');
+          if (!name || !contact) {
+            if (reqMsg) { reqMsg.textContent = '姓名和联系方式不能为空'; reqMsg.className = 'front-auth-msg error'; }
+            return;
+          }
+          if (btn) { btn.disabled = true; btn.textContent = '提交中...'; }
+          if (reqMsg) { reqMsg.textContent = ''; reqMsg.className = 'front-auth-msg'; }
+          try {
+            // 登录用户携带 token，申请会自动关联账号
+            var token = localStorage.getItem('frontToken');
+            var headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = 'Bearer ' + token;
+            var res = await fetch('/api/genealogy/request-password', {
+              method: 'POST',
+              headers: headers,
+              body: JSON.stringify({ name: name, contact: contact, reason: reason })
+            });
+            var data = await res.json();
+            if (!res.ok) throw new Error(data.error || '申请提交失败');
+            if (reqMsg) { reqMsg.textContent = data.message || '申请已提交'; reqMsg.className = 'front-auth-msg success'; }
+            reqForm.reset();
+          } catch (err) {
+            if (reqMsg) { reqMsg.textContent = err.message; reqMsg.className = 'front-auth-msg error'; }
+          } finally {
+            if (btn) { btn.disabled = false; btn.textContent = '提交申请'; }
+          }
+        });
+      }
+
+    })();
+  </script>
+
+  <!-- 人物详情弹层 -->
+  <div class="genealogy-detail-overlay" id="genealogyDetailOverlay">
+    <div class="genealogy-detail-card" id="genealogyDetailCard">
+      <button class="genealogy-detail-close" id="genealogyDetailClose" type="button" aria-label="关闭">&times;</button>
+      <div id="genealogyDetailBody"></div>
+    </div>
+  </div>
+
+  <!-- 底部 footer -->
+  <footer class="footer">
+    <div class="footer-toolbar">
+      <button class="toolbar-btn" id="themeColorBtn" title="主题颜色">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="13.5" cy="6.5" r=".5"/>
+          <circle cx="17.5" cy="10.5" r=".5"/>
+          <circle cx="8.5" cy="7.5" r=".5"/>
+          <circle cx="6.5" cy="12.5" r=".5"/>
+          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+        </svg>
+      </button>
+      <button class="toolbar-btn" id="languageBtn" title="语言">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </button>
+      <button class="toolbar-btn" id="darkModeBtn" title="夜间模式">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+    </div>
+  </footer>
+
+  <!-- 手机端底部导航 -->
+  <nav class="mobile-tabbar" aria-label="手机端底部导航">
+    <a class="mobile-tabbar-item" href="index.html" data-tab="home">
+      <span class="mobile-tabbar-icon">⌂</span>
+      <span>主页</span>
+    </a>
+    <a class="mobile-tabbar-item" href="genealogy.html" data-tab="genealogy">
+      <span class="mobile-tabbar-icon">▲</span>
+      <span>族谱</span>
+    </a>
+    <a class="mobile-tabbar-item" href="friends.html" data-tab="friends">
+      <span class="mobile-tabbar-icon">♡</span>
+      <span>朋友们</span>
+    </a>
+    <a class="mobile-tabbar-item" href="about.html" data-tab="about">
+      <span class="mobile-tabbar-icon">○</span>
+      <span>关于</span>
+    </a>
+  </nav>
+
+  <script src="js/main.js?t=20260909v3"></script>
+  <script defer src="js/ads.js?v=20260908v1"></script>
+  <script defer src="js/toolbar.js"></script>
+  <script>
+    /* 族谱页面搜索与提交 - 独立初始化（确保不依赖 main.js 的执行时序） */
+    window.addEventListener('load', function () {
+      /* 等待 main.js 完全执行后初始化 */
+      setTimeout(function () {
+        /* 密码门已由内联脚本初始化，此处无需重复 */
+
+        /* 如果 main.js 的初始化已执行则跳过 */
+        if (window.genoSearchInitialized) return;
+
+        var input = document.getElementById('genoSearchInput');
+        var clearBtn = document.getElementById('genoSearchClear');
+        var resultsEl = document.getElementById('genoSearchResults');
+        var searchBtn = document.getElementById('genoSearchBtn');
+        if (!input || !resultsEl) return;
+
+        var searchTimer = null;
+
+        function doSearch(keyword) {
+          if (!keyword) {
+            resultsEl.style.display = 'none';
+            resultsEl.innerHTML = '';
+            var cards = document.querySelectorAll('.geno-tree-card.geno-search-match');
+            for (var i = 0; i < cards.length; i++) cards[i].classList.remove('geno-search-match');
+            return;
+          }
+
+          var people = window.genoPeople || [];
+          if (!people.length) {
+            resultsEl.style.display = 'block';
+            resultsEl.innerHTML = '<div class="geno-search-empty">族谱数据正在加载中，请稍候...</div>';
+            return;
+          }
+
+          var lower = keyword.toLowerCase();
+          var matches = [];
+          for (var i = 0; i < people.length; i++) {
+            var name = (people[i].name || '').toLowerCase();
+            if (name.indexOf(lower) !== -1) matches.push(people[i]);
+          }
+
+          if (!matches.length) {
+            resultsEl.style.display = 'block';
+            resultsEl.innerHTML = '<div class="geno-search-empty">未找到匹配「' + keyword + '」的族谱人物</div>';
+            return;
+          }
+
+          resultsEl.style.display = 'flex';
+          resultsEl.innerHTML = matches.map(function (p) {
+            var meta = [];
+            if (p.generation) meta.push('第' + p.generation + '世');
+            if (p.title) meta.push(p.title);
+            if (p.era) meta.push(p.era);
+            return '<div class="geno-search-result-item" data-id="' + p.id + '">' +
+              '<span class="geno-search-result-name">' + p.name + '</span>' +
+              (meta.length ? '<span class="geno-search-result-meta">' + meta.join(' · ') + '</span>' : '') +
+              '</div>';
+          }).join('');
+
+          var items = resultsEl.querySelectorAll('.geno-search-result-item');
+          for (var j = 0; j < items.length; j++) {
+            (function (item) {
+              item.addEventListener('click', function () {
+                var id = item.getAttribute('data-id');
+                if (window.focusGenealogyPerson) {
+                  window.focusGenealogyPerson(id);
+                } else if (window.showGenoDetailModal) {
+                  window.showGenoDetailModal(id);
+                }
+              });
+            })(items[j]);
+          }
+
+          /* 高亮匹配卡片 */
+          var matchIds = {};
+          for (var k = 0; k < matches.length; k++) {
+            matchIds[matches[k].id] = true;
+            /* 展开祖先链 */
+            var person = matches[k];
+            while (person && person.parentId) {
+              if (window.genoExpanded) window.genoExpanded[person.parentId] = true;
+              var parent = window.genoPersonMap ? window.genoPersonMap[person.parentId] : null;
+              if (!parent) break;
+              person = parent;
+            }
+          }
+          if (window.renderGenealogyTree) {
+            window.renderGenealogyTree({ people: window.genoPeople });
+          }
+          setTimeout(function () {
+            var cards = document.querySelectorAll('.geno-tree-card');
+            for (var m = 0; m < cards.length; m++) {
+              var cid = cards[m].getAttribute('data-id');
+              if (matchIds[cid]) {
+                cards[m].classList.add('geno-search-match');
+              } else {
+                cards[m].classList.remove('geno-search-match');
+              }
+            }
+          }, 50);
+        }
+
+        function onInput() {
+          var val = input.value.trim();
+          if (clearBtn) clearBtn.style.display = val ? 'flex' : 'none';
+          clearTimeout(searchTimer);
+          searchTimer = setTimeout(function () { doSearch(val); }, 250);
+        }
+
+        input.addEventListener('input', onInput);
+        input.addEventListener('keyup', onInput);
+        input.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(searchTimer);
+            doSearch(input.value.trim());
+          }
+        });
+
+        if (searchBtn) {
+          searchBtn.addEventListener('click', function () {
+            doSearch(input.value.trim());
+          });
+        }
+
+        if (clearBtn) {
+          clearBtn.addEventListener('click', function () {
+            input.value = '';
+            clearBtn.style.display = 'none';
+            resultsEl.style.display = 'none';
+            resultsEl.innerHTML = '';
+          });
+        }
+
+        window.genoSearchInitialized = true;
+
+        /* 添加人物按钮 - 始终可见 */
+        var addBtn = document.getElementById('genoAddShowBtn');
+        if (addBtn) {
+          addBtn.addEventListener('click', function () {
+            var token = localStorage.getItem('frontToken');
+            var username = localStorage.getItem('frontUsername');
+            if (!token || !username) {
+              window.location.href = 'login.html';
+              return;
+            }
+            var section = document.getElementById('genealogySubmitSection');
+            var loginHint = document.getElementById('genealogyLoginHint');
+            var toggleWrap = document.getElementById('genoAddToggleWrap');
+            if (section) {
+              section.style.display = 'block';
+              section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            if (loginHint) loginHint.style.display = 'none';
+            if (toggleWrap) toggleWrap.style.display = 'none';
+
+            /* 填充父亲下拉框 */
+            var select = document.getElementById('genoSubmitParent');
+            if (select) {
+              var people = window.genoPeople || [];
+              var html = '<option value="">无（始祖）</option>';
+              var sorted = people.slice().sort(function (a, b) {
+                return (a.generation || 0) - (b.generation || 0);
+              });
+              for (var i = 0; i < sorted.length; i++) {
+                html += '<option value="' + sorted[i].id + '">第' + (sorted[i].generation || 1) + '世 · ' + sorted[i].name + '</option>';
+              }
+              select.innerHTML = html;
+            }
+          });
+        }
+
+        /* 收起按钮 */
+        var toggleBtn = document.getElementById('genoSubmitToggle');
+        if (toggleBtn) {
+          toggleBtn.addEventListener('click', function () {
+            var section = document.getElementById('genealogySubmitSection');
+            var toggleWrap = document.getElementById('genoAddToggleWrap');
+            if (section) section.style.display = 'none';
+            if (toggleWrap) toggleWrap.style.display = 'block';
+          });
+        }
+
+        /* 表单提交 */
+        var form = document.getElementById('genoSubmitForm');
+        if (form) {
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var token = localStorage.getItem('frontToken');
+            if (!token) {
+              window.location.href = 'login.html';
+              return;
+            }
+            var nameEl = document.getElementById('genoSubmitName');
+            var name = nameEl ? nameEl.value.trim() : '';
+            var generation = parseInt((document.getElementById('genoSubmitGeneration') || {}).value) || 1;
+            var parentId = (document.getElementById('genoSubmitParent') || {}).value || null;
+            var spouse = ((document.getElementById('genoSubmitSpouse') || {}).value || '').trim();
+            var title = ((document.getElementById('genoSubmitTitleField') || {}).value || '').trim();
+            var birthDate = ((document.getElementById('genoSubmitBirthDate') || {}).value || '').trim();
+            var era = ((document.getElementById('genoSubmitEra') || {}).value || '').trim();
+            var intro = ((document.getElementById('genoSubmitIntro') || {}).value || '').trim();
+            var statusEl = document.getElementById('genoSubmitStatus');
+            var btn = document.getElementById('genoSubmitBtn');
+
+            if (!name) {
+              if (statusEl) { statusEl.textContent = '请输入人物姓名'; statusEl.className = 'geno-submit-status error'; }
+              return;
+            }
+
+            if (btn) { btn.disabled = true; btn.textContent = '提交中...'; }
+            if (statusEl) { statusEl.textContent = ''; statusEl.className = 'geno-submit-status'; }
+
+            fetch('/api/user/genealogy', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+              body: JSON.stringify({
+                name: name, generation: generation, parentId: parentId,
+                spouse: spouse, title: title, birthDate: birthDate, era: era, intro: intro
+              })
+            }).then(function (res) { return res.json(); }).then(function (data) {
+              if (data.error) throw new Error(data.error);
+              if (statusEl) {
+                statusEl.textContent = data.message || '提交成功';
+                statusEl.className = 'geno-submit-status success';
+              }
+              if (form) form.reset();
+              var genInput = document.getElementById('genoSubmitGeneration');
+              if (genInput) genInput.value = '1';
+              if (data.person && data.person.reviewStatus === 'approved' && window.loadGenealogy) {
+                window.loadGenealogy();
+              }
+            }).catch(function (err) {
+              if (statusEl) { statusEl.textContent = err.message || '提交失败'; statusEl.className = 'geno-submit-status error'; }
+            }).finally(function () {
+              if (btn) { btn.disabled = false; btn.textContent = '提交审核'; }
+            });
+          });
+        }
+
+        /* 检查登录状态 */
+        var token = localStorage.getItem('frontToken');
+        var username = localStorage.getItem('frontUsername');
+        if (!token || !username) {
+          var loginHint = document.getElementById('genealogyLoginHint');
+          if (loginHint) loginHint.style.display = 'block';
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

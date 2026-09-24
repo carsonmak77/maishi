@@ -1,0 +1,33 @@
+{
+  "name": "maishi",
+  "version": "2.1.0",
+  "description": "麦氏乡村网站系统，含族谱大树图谱、文章、友链、广告管理等功能，支持Cloudflare部署",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build:cf": "node scripts/build-cloudflare.js",
+    "check": "node --check server.js && node --check public/js/main.js && node --check admin/js/admin.js && node --check workers/api.js && node --check scripts/build-cloudflare.js"
+  },
+  "keywords": [
+    "genealogy",
+    "maishi",
+    "blog",
+    "family-tree"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "https-proxy-agent": "^9.1.0",
+    "jsonwebtoken": "^9.0.0",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "localtunnel": "^2.0.2"
+  }
+}

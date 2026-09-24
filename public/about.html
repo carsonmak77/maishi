@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>关于 - 麦氏乡村</title>
+  <meta name="description" content="关于麦氏乡村">
+  <link rel="stylesheet" href="css/style.css?v=20260909v1">
+  <script>
+    (function() {
+      var themeColor = localStorage.getItem('themeColor') || 'green';
+      var darkMode = localStorage.getItem('darkMode') || 'light';
+      var lang = localStorage.getItem('language') || 'zh';
+      var root = document.documentElement;
+      var colors = {
+        green: ['#07C160', '#06ad56', '#e8f8f0'],
+        blue: ['#1890ff', '#40a9ff', '#e6f7ff'],
+        purple: ['#722ed1', '#9254de', '#f9f0ff'],
+        orange: ['#fa8c16', '#ffa940', '#fff7e6'],
+        red: ['#f5222d', '#ff4d4f', '#fff1f0'],
+        cyan: ['#13c2c2', '#36cfc9', '#e6fffb']
+      };
+      var c = colors[themeColor] || colors.green;
+      root.style.setProperty('--theme-primary', c[0]);
+      root.style.setProperty('--theme-primary-hover', c[1]);
+      root.style.setProperty('--theme-primary-light', c[2]);
+      root.setAttribute('data-theme-color', themeColor);
+      if (darkMode === 'dark') root.setAttribute('data-theme', 'dark');
+      root.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    })();
+  </script>
+</head>
+<body>
+  <!-- 顶部导航栏 -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="logo site-logo" onclick="window.location.href='index.html'"><span class="site-logo-text">麦氏乡村</span></div>
+      <div class="nav-links">
+        <a href="index.html">主页</a>
+        <a href="genealogy.html">族谱</a>
+        <a href="friends.html">朋友们</a>
+        <a href="about.html" class="active">关于</a>
+      </div>
+      <div class="navbar-actions">
+        <div class="auth-actions" id="authActions">
+          <a class="auth-link" href="login.html">登录</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主内容区 -->
+  <main class="container page-container" id="aboutPage">
+    <!-- 广告位：关于页顶部 -->
+    <div class="ad-slot" data-position="about_top" data-format="banner" id="adAboutTop"></div>
+    <div class="loading"><div class="spinner"></div><p>正在加载关于页面...</p></div>
+  </main>
+
+  <!-- 联系方式与赞助区 -->
+  <section class="container" id="contactSponsorSection">
+    <!-- 联系方式卡片 -->
+    <div class="about-card contact-card">
+      <h2>联系我们</h2>
+      <div class="contact-grid" id="contactGrid">
+        <!-- 联系方式由 JS 动态渲染 -->
+      </div>
+    </div>
+
+    <!-- 赞助卡片 -->
+    <div class="about-card sponsor-card">
+      <h2>赞助支持</h2>
+      <p class="sponsor-desc" id="sponsorDesc"></p>
+      <div class="sponsor-qr-grid" id="sponsorQrGrid">
+        <!-- 赞助二维码由 JS 动态渲染 -->
+      </div>
+      <button type="button" class="btn-primary sponsor-copy-btn" id="sponsorCopyBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px;">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        复制赞助码
+      </button>
+      <div class="sponsor-thanks" id="sponsorThanks" style="display:none;">感谢您的支持！</div>
+    </div>
+  </section>
+
+  <!-- 关于页留言反馈区 -->
+  <section class="container">
+    <div class="comment-section" id="aboutCommentSection" data-target-type="home">
+      <!-- 留言反馈由 JS 动态渲染 -->
+    </div>
+  </section>
+
+  <!-- 底部 footer -->
+  <footer class="footer">
+    <!-- 底部工具栏 -->
+    <div class="footer-toolbar">
+      <button class="toolbar-btn" id="themeColorBtn" title="主题颜色">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="13.5" cy="6.5" r=".5"/>
+          <circle cx="17.5" cy="10.5" r=".5"/>
+          <circle cx="8.5" cy="7.5" r=".5"/>
+          <circle cx="6.5" cy="12.5" r=".5"/>
+          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+        </svg>
+      </button>
+      <button class="toolbar-btn" id="languageBtn" title="语言">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </button>
+      <button class="toolbar-btn" id="darkModeBtn" title="夜间模式">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+    </div>
+  </footer>
+
+  <!-- 手机端底部导航 -->
+  <nav class="mobile-tabbar" aria-label="手机端底部导航">
+    <a class="mobile-tabbar-item" href="index.html" data-tab="home">
+      <span class="mobile-tabbar-icon">⌂</span>
+      <span>主页</span>
+    </a>
+    <a class="mobile-tabbar-item" href="genealogy.html" data-tab="genealogy">
+      <span class="mobile-tabbar-icon">▲</span>
+      <span>族谱</span>
+    </a>
+    <a class="mobile-tabbar-item" href="friends.html" data-tab="friends">
+      <span class="mobile-tabbar-icon">♡</span>
+      <span>朋友们</span>
+    </a>
+    <a class="mobile-tabbar-item" href="about.html" data-tab="about">
+      <span class="mobile-tabbar-icon">○</span>
+      <span>关于</span>
+    </a>
+  </nav>
+
+  <script defer src="js/main.js?v=20260823v6"></script>
+  <script defer src="js/ads.js?v=20260908v1"></script>
+  <script defer src="js/toolbar.js"></script>
+  <script>
+    /* 从 API 加载联系方式与赞助信息 */
+    window.addEventListener('load', function () {
+      fetch('/api/about').then(function (r) { return r.json(); }).then(function (data) {
+        renderContact(data.contact || {});
+        renderSponsor(data.sponsor || {});
+      }).catch(function () {});
+
+      function renderContact(c) {
+        var grid = document.getElementById('contactGrid');
+        if (!grid) return;
+        var items = [];
+        if (c.email) {
+          items.push(
+            '<div class="contact-item"><div class="contact-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div><div class="contact-text"><span class="contact-label">邮箱</span><a href="mailto:' + c.email + '" class="contact-value">' + c.email + '</a></div></div>'
+          );
+        }
+        if (c.wechat) {
+          items.push(
+            '<div class="contact-item"><div class="contact-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div class="contact-text"><span class="contact-label">微信</span><span class="contact-value">' + c.wechat + '</span></div></div>'
+          );
+        }
+        if (c.qq) {
+          items.push(
+            '<div class="contact-item"><div class="contact-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/></svg></div><div class="contact-text"><span class="contact-label">QQ</span><span class="contact-value">' + c.qq + '</span></div></div>'
+          );
+        }
+        if (c.phone) {
+          items.push(
+            '<div class="contact-item"><div class="contact-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div class="contact-text"><span class="contact-label">电话</span><a href="tel:' + c.phone + '" class="contact-value">' + c.phone + '</a></div></div>'
+          );
+        }
+        if (c.address) {
+          items.push(
+            '<div class="contact-item"><div class="contact-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div class="contact-text"><span class="contact-label">地址</span><span class="contact-value">' + c.address + '</span></div></div>'
+          );
+        }
+        grid.innerHTML = items.join('');
+      }
+
+      function renderSponsor(s) {
+        var desc = document.getElementById('sponsorDesc');
+        if (desc) desc.textContent = s.description || '';
+
+        var qrGrid = document.getElementById('sponsorQrGrid');
+        if (!qrGrid) return;
+        var items = [];
+        // 微信赞助码
+        if (s.wechatQr) {
+          items.push(
+            '<div class="sponsor-qr-item"><div class="sponsor-qr-img"><img src="' + s.wechatQr + '" alt="微信赞助码" style="width:120px;height:120px;border-radius:8px;object-fit:cover;"></div><span class="sponsor-qr-label">微信赞助</span></div>'
+          );
+        } else {
+          items.push(
+            '<div class="sponsor-qr-item"><div class="sponsor-qr-img"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div><span class="sponsor-qr-label">微信赞助</span></div>'
+          );
+        }
+        // 支付宝赞助码
+        if (s.alipayQr) {
+          items.push(
+            '<div class="sponsor-qr-item"><div class="sponsor-qr-img"><img src="' + s.alipayQr + '" alt="支付宝赞助码" style="width:120px;height:120px;border-radius:8px;object-fit:cover;"></div><span class="sponsor-qr-label">支付宝赞助</span></div>'
+          );
+        } else {
+          items.push(
+            '<div class="sponsor-qr-item"><div class="sponsor-qr-img"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></div><span class="sponsor-qr-label">支付宝赞助</span></div>'
+          );
+        }
+        qrGrid.innerHTML = items.join('');
+      }
+
+      /* 赞助复制按钮 */
+      var copyBtn = document.getElementById('sponsorCopyBtn');
+      var thanks = document.getElementById('sponsorThanks');
+      if (!copyBtn) return;
+      copyBtn.addEventListener('click', function () {
+        fetch('/api/about').then(function(r){return r.json();}).then(function(data){
+          var code = (data.sponsor && data.sponsor.code) || 'MAISHI2026';
+          doCopy(code);
+        }).catch(function(){ doCopy('MAISHI2026'); });
+      });
+      function doCopy(code) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).then(function () {
+            if (thanks) { thanks.style.display = 'block'; setTimeout(function () { thanks.style.display = 'none'; }, 3000); }
+          }).catch(function () { fallbackCopy(code, thanks); });
+        } else {
+          fallbackCopy(code, thanks);
+        }
+      }
+      function fallbackCopy(text, el) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { if (el) { el.style.display = 'block'; setTimeout(function () { el.style.display = 'none'; }, 3000); } } catch (e) {}
+        document.body.removeChild(ta);
+      }
+
+      /* 赞助二维码点击提示 */
+      document.body.addEventListener('click', function (e) {
+        var el = e.target.closest('.sponsor-qr-img');
+        if (!el) return;
+        fetch('/api/about').then(function(r){return r.json();}).then(function(data){
+          var code = (data.sponsor && data.sponsor.code) || 'MAISHI2026';
+          alert('请将赞助码 ' + code + ' 发送给管理员，或在微信/支付宝中搜索赞助码进行赞助。');
+        }).catch(function(){
+          alert('请将赞助码 MAISHI2026 发送给管理员，或在微信/支付宝中搜索赞助码进行赞助。');
+        });
+      });
+    });
+  </script>
+</body>
+</html>
