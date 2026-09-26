@@ -9,7 +9,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "maishi-db"
-database_id = "请在 Cloudflare 创建 D1 后替换为真实 database_id"
+database_id = "4e155fce-b3a8-44a6-99d3-00a2bb8025ed"
 
 [[r2_buckets]]
 binding = "UPLOADS"

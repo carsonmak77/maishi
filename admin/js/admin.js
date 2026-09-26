@@ -77,6 +77,27 @@
     return parts.map(function (code) { return String.fromCharCode(code); }).join('');
   }
 
+  // 加密版权品牌名（码点编码存储，避免被直接搜索到）— CARSON
+  var PROTECTED_ADMIN_BRAND = decodeProtectedText([67, 65, 82, 83, 79, 78]);
+  // 版权解锁码（码点编码存储）— CARSON2026
+  var ADMIN_FOOTER_UNLOCK_CODE = decodeProtectedText([67, 65, 82, 83, 79, 78, 50, 48, 50, 54]);
+
+  // 解锁版权保护：在浏览器控制台输入 __unlockAdminFooterProtection('解锁码') 即可临时解除保护
+  // 解锁后可修改 footer，刷新页面后保护自动恢复
+  window.__unlockAdminFooterProtection = function (code) {
+    if (code === ADMIN_FOOTER_UNLOCK_CODE) {
+      window.__adminFooterProtectionUnlocked = true;
+      if (window.__adminFooterObserver) {
+        window.__adminFooterObserver.disconnect();
+        window.__adminFooterObserver = null;
+      }
+      console.log('后台版权保护已解锁，可临时修改。刷新页面后恢复保护。');
+      return true;
+    }
+    console.log('解锁码错误，保护未解除。');
+    return false;
+  };
+
   function renderAdminProtectedFooter() {
     var footer = document.getElementById('adminProtectedFooter');
     if (!footer) {
@@ -86,8 +107,8 @@
       document.body.appendChild(footer);
     }
     footer.setAttribute('data-protected-footer', '1');
-    // 编码"麦氏乡村"，避免被直接搜索到
-    var brand = decodeProtectedText([40614, 27663, 20065, 26449]);
+    // 品牌名使用模块级常量（码点编码存储，避免明文）
+    var brand = PROTECTED_ADMIN_BRAND;
     var year = decodeProtectedText([50, 48, 50, 54]);
     footer.innerHTML = '© ' + year + ' Powered by ' +
       '<a href="https://520816.xyz" target="_blank" rel="noopener noreferrer">' + brand + '</a>' +
@@ -101,8 +122,10 @@
     var isRendering = false;
     window.__adminFooterObserver = new MutationObserver(function () {
       if (isRendering) return;
+      // 已解锁则不再强制恢复，允许临时修改
+      if (window.__adminFooterProtectionUnlocked) return;
       var footer = document.getElementById('adminProtectedFooter');
-      if (!footer || !footer.textContent.includes('管理系统')) {
+      if (!footer || !footer.textContent.includes(PROTECTED_ADMIN_BRAND)) {
         isRendering = true;
         renderAdminProtectedFooter();
         isRendering = false;
@@ -1077,6 +1100,26 @@
       showToast('封面图片上传成功');
     } catch (err) {
       showToast(err.message || '封面上传失败');
+    }
+  }
+
+  // 赞助二维码上传：上传成功后把 URL 回填到对应输入框，前台固定显示 120×120
+  async function uploadSponsorQr(file, inputId) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('赞助图片不能大于 5MB');
+      return;
+    }
+    var formData = new FormData();
+    formData.append('image', file);
+    try {
+      var data = await apiFormRequest('/api/admin/uploads/images', 'POST', formData);
+      var url = data.url || '';
+      var urlInput = document.getElementById(inputId);
+      if (urlInput) urlInput.value = url;
+      showToast('赞助图片上传成功');
+    } catch (err) {
+      showToast(err.message || '赞助图片上传失败');
     }
   }
 
@@ -3124,6 +3167,7 @@
       if ((el = document.getElementById('sponsorDescInput'))) el.value = s.description || '';
       if ((el = document.getElementById('sponsorWechatQrInput'))) el.value = s.wechatQr || '';
       if ((el = document.getElementById('sponsorAlipayQrInput'))) el.value = s.alipayQr || '';
+      if ((el = document.getElementById('sponsorThirdQrInput'))) el.value = s.thirdQr || '';
       if ((el = document.getElementById('sponsorCodeInput'))) el.value = s.code || '';
     } catch (err) {
       showToast(err.message || '联系方式加载失败');
@@ -3158,6 +3202,7 @@
       description: document.getElementById('sponsorDescInput').value.trim(),
       wechatQr: document.getElementById('sponsorWechatQrInput').value.trim(),
       alipayQr: document.getElementById('sponsorAlipayQrInput').value.trim(),
+      thirdQr: document.getElementById('sponsorThirdQrInput').value.trim(),
       code: document.getElementById('sponsorCodeInput').value.trim()
     };
     if (btn) { btn.disabled = true; btn.textContent = '保存中...'; }
@@ -4202,6 +4247,38 @@
       sponsorSettingsForm.addEventListener('submit', saveSponsorSettings);
     }
 
+    // 赞助二维码图片上传（微信 / 支付宝）
+    var sponsorWechatQrFile = document.getElementById('sponsorWechatQrFile');
+    if (sponsorWechatQrFile) {
+      sponsorWechatQrFile.addEventListener('change', function () {
+        var file = sponsorWechatQrFile.files && sponsorWechatQrFile.files[0];
+        if (file) {
+          uploadSponsorQr(file, 'sponsorWechatQrInput');
+          sponsorWechatQrFile.value = '';
+        }
+      });
+    }
+    var sponsorAlipayQrFile = document.getElementById('sponsorAlipayQrFile');
+    if (sponsorAlipayQrFile) {
+      sponsorAlipayQrFile.addEventListener('change', function () {
+        var file = sponsorAlipayQrFile.files && sponsorAlipayQrFile.files[0];
+        if (file) {
+          uploadSponsorQr(file, 'sponsorAlipayQrInput');
+          sponsorAlipayQrFile.value = '';
+        }
+      });
+    }
+    var sponsorThirdQrFile = document.getElementById('sponsorThirdQrFile');
+    if (sponsorThirdQrFile) {
+      sponsorThirdQrFile.addEventListener('change', function () {
+        var file = sponsorThirdQrFile.files && sponsorThirdQrFile.files[0];
+        if (file) {
+          uploadSponsorQr(file, 'sponsorThirdQrInput');
+          sponsorThirdQrFile.value = '';
+        }
+      });
+    }
+
     var siteLogoInput = document.getElementById('siteLogoInput');
     if (siteLogoInput) {
       siteLogoInput.addEventListener('change', function () {
@@ -4631,6 +4708,7 @@
     'genealogy_top': '族谱页顶部',
     'friends_top': '友链页顶部',
     'about_top': '关于页顶部',
+    'float': '浮动小图（全站漂浮）',
     'all': '全站通投'
   };
 
@@ -4716,7 +4794,10 @@
     document.getElementById('adType').value = ad ? ad.type : 'image';
     document.getElementById('adFormat').value = ad ? (ad.format || 'banner') : 'banner';
     document.getElementById('adActive').value = ad ? String(ad.active) : 'true';
+    document.getElementById('adStaySeconds').value = ad && ad.staySeconds ? ad.staySeconds : '';
     document.getElementById('adImageUrl').value = ad ? (ad.imageUrl || '') : '';
+    document.getElementById('adImgWidth').value = ad && ad.imgWidth ? ad.imgWidth : '';
+    document.getElementById('adImgHeight').value = ad && ad.imgHeight ? ad.imgHeight : '';
     document.getElementById('adLink').value = ad ? (ad.link || '') : '';
     document.getElementById('adContent').value = ad ? (ad.content || '') : '';
     document.getElementById('adTextContent').value = ad && ad.type === 'text' ? (ad.content || '') : '';
@@ -4750,7 +4831,10 @@
       type: document.getElementById('adType').value,
       format: document.getElementById('adFormat').value,
       active: document.getElementById('adActive').value === 'true',
+      staySeconds: document.getElementById('adStaySeconds').value.trim(),
       imageUrl: document.getElementById('adImageUrl').value.trim(),
+      imgWidth: document.getElementById('adImgWidth').value.trim(),
+      imgHeight: document.getElementById('adImgHeight').value.trim(),
       link: document.getElementById('adLink').value.trim()
     };
 

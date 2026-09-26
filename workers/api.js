@@ -150,7 +150,7 @@ function defaultDB() {
       maintenancePassword: '',
       maintenanceMessage: '网站维护中，敬请谅解',
       contact: { email: '', wechat: '', qq: '', phone: '', address: '' },
-      sponsor: { description: '', wechatQr: '', alipayQr: '', code: '' },
+      sponsor: { description: '', wechatQr: '', alipayQr: '', thirdQr: '', code: '' },
       cloudflareApiToken: '',
       cloudflareZoneId: ''
     },
@@ -227,7 +227,7 @@ function migrateDB(db) {
   if (db.settings.maintenanceMessage === undefined) db.settings.maintenanceMessage = '网站维护中，敬请谅解';
   // 联系与赞助设置数据迁移
   if (!db.settings.contact) db.settings.contact = { email: '', wechat: '', qq: '', phone: '', address: '' };
-  if (!db.settings.sponsor) db.settings.sponsor = { description: '', wechatQr: '', alipayQr: '', code: '' };
+  if (!db.settings.sponsor) db.settings.sponsor = { description: '', wechatQr: '', alipayQr: '', thirdQr: '', code: '' };
   return db;
 }
 
@@ -644,7 +644,9 @@ async function handlePosts(request, env, path, method, url) {
     return json(ads.map(a => ({
       id: a.id, position: a.position, type: a.type, title: a.title,
       content: a.content, imageUrl: a.imageUrl, link: a.link,
-      active: a.active, format: a.format
+      active: a.active, format: a.format,
+      imgWidth: a.imgWidth, imgHeight: a.imgHeight,
+      staySeconds: a.staySeconds
     })));
   }
 
@@ -1017,6 +1019,7 @@ async function handleMetaSettings(request, env, path, method) {
       description: String(body.description || '').trim(),
       wechatQr: String(body.wechatQr || '').trim(),
       alipayQr: String(body.alipayQr || '').trim(),
+      thirdQr: String(body.thirdQr || '').trim(),
       code: String(body.code || '').trim()
     };
     db.settings.updatedAt = now();
@@ -1080,6 +1083,29 @@ async function handleCategories(request, env, path, method) {
 }
 
 // ===== 广告管理 API =====
+// 图片广告固定宽高默认值（三端统一显示）
+const AD_IMAGE_SIZE_DEFAULTS = {
+  banner: { w: 960, h: 120 },
+  rectangle: { w: 300, h: 250 },
+  inline: { w: 728, h: 90 },
+  float: { w: 120, h: 120 }
+};
+function parseAdSize(val, fallback) {
+  const n = parseInt(val, 10);
+  if (!isNaN(n) && n >= 40 && n <= 2000) return n;
+  return fallback;
+}
+// 轮播展示时长（秒）：范围 1~600，默认 5 秒
+function parseAdStay(val, fallback) {
+  const n = parseInt(val, 10);
+  if (!isNaN(n) && n >= 1 && n <= 600) return n;
+  return fallback || 5;
+}
+function adDefaultSize(adLike) {
+  const key = adLike.position === 'float' ? 'float' : (adLike.format || 'banner');
+  return AD_IMAGE_SIZE_DEFAULTS[key] || AD_IMAGE_SIZE_DEFAULTS.banner;
+}
+
 async function handleAds(request, env, path, method, url) {
   const adMatch = path.match(/^\/api\/admin\/ads\/(.+)$/);
 
@@ -1098,7 +1124,7 @@ async function handleAds(request, env, path, method, url) {
     const db = await loadDB(env);
     if (!db.ads) db.ads = [];
     const body = await readJSON(request);
-    const { position, type, title, content, imageUrl, link, format } = body;
+    const { position, type, title, content, imageUrl, link, format, imgWidth, imgHeight, staySeconds } = body;
     if (!position || !type) return error('广告位置和类型必填', 400);
     const ad = {
       id: Date.now().toString(),
@@ -1114,6 +1140,12 @@ async function handleAds(request, env, path, method, url) {
       impressions: 0,
       createdAt: now()
     };
+    // 图片广告固定宽高（三端统一），未填则按广告格式给默认值
+    const defSize = adDefaultSize(ad);
+    ad.imgWidth = parseAdSize(imgWidth, defSize.w);
+    ad.imgHeight = parseAdSize(imgHeight, defSize.h);
+    // 同位置多条广告轮播时的展示时长（秒）
+    ad.staySeconds = parseAdStay(staySeconds, 5);
     db.ads.push(ad);
     await saveDB(env, db);
     return json(ad, 201);
@@ -1136,6 +1168,9 @@ async function handleAds(request, env, path, method, url) {
     if (body.link !== undefined) ad.link = String(body.link).trim();
     if (body.format !== undefined) ad.format = String(body.format).trim();
     if (body.active !== undefined) ad.active = Boolean(body.active);
+    if (body.imgWidth !== undefined) ad.imgWidth = parseAdSize(body.imgWidth, ad.imgWidth || adDefaultSize(ad).w);
+    if (body.imgHeight !== undefined) ad.imgHeight = parseAdSize(body.imgHeight, ad.imgHeight || adDefaultSize(ad).h);
+    if (body.staySeconds !== undefined) ad.staySeconds = parseAdStay(body.staySeconds, ad.staySeconds || 5);
     ad.updatedAt = now();
     await saveDB(env, db);
     return json(ad);
@@ -2091,7 +2126,7 @@ async function handleGenealogy(request, env, path, method, url) {
     }
 
     if (!Array.isArray(db.genealogyPasswordRequests)) db.genealogyPasswordRequests = [];
-    const request = {
+    const newRequest = {
       id: 'gpr' + Date.now().toString() + Math.random().toString(16).slice(2, 6),
       name: name,
       contact: contact,
@@ -2103,7 +2138,7 @@ async function handleGenealogy(request, env, path, method, url) {
       reviewedAt: '',
       reviewer: ''
     };
-    db.genealogyPasswordRequests.push(request);
+    db.genealogyPasswordRequests.push(newRequest);
     await saveDB(env, db);
     return json({ success: true, message: '申请已提交，请等待管理员审核' });
   }
@@ -2544,10 +2579,14 @@ async function checkMaintenance(request, env, path) {
   if (!maintenanceMode) return null;
 
   // 维护模式验证接口和认证接口放行，确保管理员可以登录
+  // 同时放行前端检测维护状态所必需的只读公开接口（settings/meta/bootstrap）
   if (path === '/api/maintenance/verify-password' ||
       path === '/api/auth/login' ||
       path === '/api/auth/verify' ||
-      path === '/api/user/login') return null;
+      path === '/api/user/login' ||
+      path === '/api/settings' ||
+      path === '/api/meta' ||
+      path === '/api/bootstrap') return null;
 
   // 管理后台页面放行（前端自己验证）
   if (path.startsWith('/admin/')) return null;
@@ -2562,7 +2601,11 @@ async function checkMaintenance(request, env, path) {
     return error('网站维护中，请稍后再试', 503);
   }
 
-  // 其他 API：检查是否已验证维护密码
+  // 其他 API：已登录用户（管理员或普通用户）直接放行，无需维护密码
+  const loginUser = await verifyToken(request, env);
+  if (loginUser && loginUser.type === 'user') return null;
+
+  // 未登录访客：检查是否已验证维护密码
   const verified = request.headers.get('x-maintenance-verified') === 'true';
   if (verified) return null;
 

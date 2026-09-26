@@ -650,6 +650,7 @@ VALUES (
         'description', '',
         'wechatQr', '',
         'alipayQr', '',
+        'thirdQr', '',
         'code', ''
       ),
       'about', json_object(

@@ -751,6 +751,7 @@ function loadDB() {
       description: '麦氏乡村网站由家族成员共同维护，如果您觉得本站对您有帮助，欢迎赞助支持，您的支持将用于服务器运营与族谱资料整理。',
       wechatQr: '',
       alipayQr: '',
+      thirdQr: '',
       code: 'MAISHI2026'
     };
     changed = true;
@@ -1465,10 +1466,14 @@ function maintenanceMiddleware(req, res, next) {
   // API 路径：返回 JSON 错误
   if (req.path.startsWith('/api/')) {
     // 维护模式验证接口和认证接口放行，确保管理员可以登录
+    // 同时放行前端检测维护状态所必需的只读公开接口（settings/meta/bootstrap）
     if (req.path === '/api/maintenance/verify-password' ||
         req.path === '/api/auth/login' ||
         req.path === '/api/auth/verify' ||
-        req.path === '/api/user/login') return next();
+        req.path === '/api/user/login' ||
+        req.path === '/api/settings' ||
+        req.path === '/api/meta' ||
+        req.path === '/api/bootstrap') return next();
 
     // 管理后台 API 验证管理员身份
     if (req.path.startsWith('/api/admin/')) {
@@ -1480,7 +1485,16 @@ function maintenanceMiddleware(req, res, next) {
       return res.status(503).json({ error: '网站维护中，请稍后再试' });
     }
 
-    // 其他 API 检查是否已验证维护密码
+    // 其他 API：已登录用户（管理员或普通用户）直接放行，无需维护密码
+    const userToken = req.headers.authorization?.replace('Bearer ', '') || '';
+    if (userToken) {
+      try {
+        const decoded = jwt.verify(userToken, SECRET_KEY);
+        if (decoded.type === 'user') return next();
+      } catch (e) {}
+    }
+
+    // 未登录访客：检查是否已验证维护密码
     const verified = req.headers['x-maintenance-verified'] === 'true' ||
                      (req.cookies && req.cookies.maintenanceVerified === 'true');
     if (verified) return next();
@@ -2104,6 +2118,29 @@ app.get('/api/posts/:id', (req, res) => {
 });
 
 // ===== 广告管理 API =====
+// 图片广告固定宽高默认值（三端统一显示）
+const AD_IMAGE_SIZE_DEFAULTS = {
+  banner: { w: 960, h: 120 },
+  rectangle: { w: 300, h: 250 },
+  inline: { w: 728, h: 90 },
+  float: { w: 120, h: 120 }
+};
+function parseAdSize(val, fallback) {
+  const n = parseInt(val, 10);
+  if (!isNaN(n) && n >= 40 && n <= 2000) return n;
+  return fallback;
+}
+// 轮播展示时长（秒）：范围 1~600，默认 5 秒
+function parseAdStay(val, fallback) {
+  const n = parseInt(val, 10);
+  if (!isNaN(n) && n >= 1 && n <= 600) return n;
+  return fallback || 5;
+}
+function adDefaultSize(adLike) {
+  const key = adLike.position === 'float' ? 'float' : (adLike.format || 'banner');
+  return AD_IMAGE_SIZE_DEFAULTS[key] || AD_IMAGE_SIZE_DEFAULTS.banner;
+}
+
 // 前台获取广告列表
 app.get('/api/ads', (req, res) => {
   const db = loadDB();
@@ -2111,7 +2148,9 @@ app.get('/api/ads', (req, res) => {
   res.json(ads.map(a => ({
     id: a.id, position: a.position, type: a.type, title: a.title,
     content: a.content, imageUrl: a.imageUrl, link: a.link,
-    active: a.active, format: a.format
+    active: a.active, format: a.format,
+    imgWidth: a.imgWidth, imgHeight: a.imgHeight,
+    staySeconds: a.staySeconds
   })));
 });
 
@@ -2125,7 +2164,7 @@ app.get('/api/admin/ads', authMiddleware, (req, res) => {
 app.post('/api/admin/ads', authMiddleware, (req, res) => {
   const db = loadDB();
   if (!db.ads) db.ads = [];
-  const { position, type, title, content, imageUrl, link, format } = req.body;
+  const { position, type, title, content, imageUrl, link, format, imgWidth, imgHeight, staySeconds } = req.body;
   if (!position || !type) return res.status(400).json({ error: '广告位置和类型必填' });
   const ad = {
     id: Date.now().toString(),
@@ -2139,6 +2178,12 @@ app.post('/api/admin/ads', authMiddleware, (req, res) => {
     active: true,
     createdAt: new Date().toISOString()
   };
+  // 图片广告固定宽高（三端统一），未填则按广告格式给默认值
+  const defSize = adDefaultSize(ad);
+  ad.imgWidth = parseAdSize(imgWidth, defSize.w);
+  ad.imgHeight = parseAdSize(imgHeight, defSize.h);
+  // 同位置多条广告轮播时的展示时长（秒）
+  ad.staySeconds = parseAdStay(staySeconds, 5);
   db.ads.push(ad);
   saveDB(db);
   res.status(201).json(ad);
@@ -2150,7 +2195,7 @@ app.put('/api/admin/ads/:id', authMiddleware, (req, res) => {
   if (!db.ads) db.ads = [];
   const ad = db.ads.find(a => a.id === req.params.id);
   if (!ad) return res.status(404).json({ error: '广告不存在' });
-  const { position, type, title, content, imageUrl, link, format, active } = req.body;
+  const { position, type, title, content, imageUrl, link, format, active, imgWidth, imgHeight, staySeconds } = req.body;
   if (position !== undefined) ad.position = String(position).trim();
   if (type !== undefined) ad.type = String(type).trim();
   if (title !== undefined) ad.title = String(title).trim();
@@ -2159,6 +2204,9 @@ app.put('/api/admin/ads/:id', authMiddleware, (req, res) => {
   if (link !== undefined) ad.link = String(link).trim();
   if (format !== undefined) ad.format = String(format).trim();
   if (active !== undefined) ad.active = Boolean(active);
+  if (imgWidth !== undefined) ad.imgWidth = parseAdSize(imgWidth, ad.imgWidth || adDefaultSize(ad).w);
+  if (imgHeight !== undefined) ad.imgHeight = parseAdSize(imgHeight, ad.imgHeight || adDefaultSize(ad).h);
+  if (staySeconds !== undefined) ad.staySeconds = parseAdStay(staySeconds, ad.staySeconds || 5);
   saveDB(db);
   res.json(ad);
 });
@@ -2850,6 +2898,7 @@ app.post('/api/admin/sponsor', authMiddleware, (req, res) => {
     description: String(req.body.description || '').trim(),
     wechatQr: String(req.body.wechatQr || '').trim(),
     alipayQr: String(req.body.alipayQr || '').trim(),
+    thirdQr: String(req.body.thirdQr || '').trim(),
     code: String(req.body.code || '').trim()
   };
   db.settings.updatedAt = new Date().toISOString();
@@ -3655,7 +3704,7 @@ app.post('/api/genealogy/request-password', (req, res) => {
     db.genealogyPasswordRequests = [];
   }
 
-  const request = {
+  const newRequest = {
     id: 'gpr' + Date.now().toString() + Math.random().toString(16).slice(2, 6),
     name: name,
     contact: contact,
@@ -3668,7 +3717,7 @@ app.post('/api/genealogy/request-password', (req, res) => {
     reviewer: ''
   };
 
-  db.genealogyPasswordRequests.push(request);
+  db.genealogyPasswordRequests.push(newRequest);
   saveDB(db);
   return res.json({ success: true, message: '申请已提交，请等待管理员审核' });
 });

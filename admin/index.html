@@ -1049,6 +1049,7 @@
                       <option value="genealogy_top">族谱页顶部</option>
                       <option value="friends_top">友链页顶部</option>
                       <option value="about_top">关于页顶部</option>
+                      <option value="float">浮动小图（全站漂浮）</option>
                       <option value="all">全站通投</option>
                     </select>
                   </div>
@@ -1070,6 +1071,11 @@
                     </select>
                   </div>
                   <div class="form-group" style="flex:1;">
+                    <label>轮播时长 (秒)</label>
+                    <input type="number" class="form-input" id="adStaySeconds" min="1" max="600" placeholder="5">
+                    <div class="form-help">同一广告位叠加多条广告时，按此秒数自动轮播切换（默认 5 秒，范围 1~600）。</div>
+                  </div>
+                  <div class="form-group" style="flex:1;">
                     <label>状态</label>
                     <select class="form-select" id="adActive">
                       <option value="true">启用</option>
@@ -1081,6 +1087,17 @@
                   <label>图片URL</label>
                   <input type="text" class="form-input" id="adImageUrl" placeholder="https://example.com/ad.jpg">
                   <div class="form-help">图片广告请填写图片链接地址</div>
+                  <div class="form-row" style="display:flex;gap:12px;margin-top:10px;">
+                    <div class="form-group" style="flex:1;margin-bottom:0;">
+                      <label>图片宽度 (px)</label>
+                      <input type="number" class="form-input" id="adImgWidth" min="40" max="2000" placeholder="960">
+                    </div>
+                    <div class="form-group" style="flex:1;margin-bottom:0;">
+                      <label>图片高度 (px)</label>
+                      <input type="number" class="form-input" id="adImgHeight" min="40" max="2000" placeholder="120">
+                    </div>
+                  </div>
+                  <div class="form-help">图片广告按固定宽高在三端统一显示（电脑/平板/手机）。留空时按广告格式给默认尺寸；"浮动小图"建议 120×120 左右。</div>
                 </div>
                 <div class="form-group" id="adLinkGroup">
                   <label>跳转链接</label>
@@ -1349,12 +1366,31 @@
                 </div>
                 <div class="form-row">
                   <div class="form-group">
-                    <label>微信赞助码图片URL</label>
-                    <input type="text" class="form-input" id="sponsorWechatQrInput" placeholder="粘贴图片地址，留空则显示默认图标">
+                    <label>微信赞助码图片</label>
+                    <div class="cover-upload-row">
+                      <input type="text" class="form-input" id="sponsorWechatQrInput" placeholder="粘贴图片地址或点击右侧上传">
+                      <label class="btn btn-sm btn-ghost upload-inline-btn" for="sponsorWechatQrFile">上传图片</label>
+                      <input type="file" id="sponsorWechatQrFile" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" hidden>
+                    </div>
+                    <div class="form-help">支持 PNG、JPG、GIF、WEBP、SVG，大小不超过 5MB。前台固定显示 120×120，与原图尺寸无关。</div>
                   </div>
                   <div class="form-group">
-                    <label>支付宝赞助码图片URL</label>
-                    <input type="text" class="form-input" id="sponsorAlipayQrInput" placeholder="粘贴图片地址，留空则显示默认图标">
+                    <label>支付宝赞助码图片</label>
+                    <div class="cover-upload-row">
+                      <input type="text" class="form-input" id="sponsorAlipayQrInput" placeholder="粘贴图片地址或点击右侧上传">
+                      <label class="btn btn-sm btn-ghost upload-inline-btn" for="sponsorAlipayQrFile">上传图片</label>
+                      <input type="file" id="sponsorAlipayQrFile" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" hidden>
+                    </div>
+                    <div class="form-help">支持 PNG、JPG、GIF、WEBP、SVG，大小不超过 5MB。前台固定显示 120×120，与原图尺寸无关。</div>
+                  </div>
+                  <div class="form-group">
+                    <label>第三方赞助码图片</label>
+                    <div class="cover-upload-row">
+                      <input type="text" class="form-input" id="sponsorThirdQrInput" placeholder="粘贴图片地址或点击右侧上传">
+                      <label class="btn btn-sm btn-ghost upload-inline-btn" for="sponsorThirdQrFile">上传图片</label>
+                      <input type="file" id="sponsorThirdQrFile" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" hidden>
+                    </div>
+                    <div class="form-help">支持 PNG、JPG、GIF、WEBP、SVG，大小不超过 5MB。前台固定显示 120×120，与原图尺寸无关。</div>
                   </div>
                 </div>
                 <div class="form-group">

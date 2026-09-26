@@ -1,6 +1,6 @@
 {
   "name": "maishi",
-  "version": "2.1.0",
+  "version": "2.1.4",
   "description": "麦氏乡村网站系统，含族谱大树图谱、文章、友链、广告管理等功能，支持Cloudflare部署",
   "main": "server.js",
   "scripts": {

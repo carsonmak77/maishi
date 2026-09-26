@@ -702,6 +702,27 @@ function decodeFooterText(parts) {
   return parts.map(function (code) { return String.fromCharCode(code); }).join('');
 }
 
+// 加密版权品牌名（码点编码存储，避免被直接搜索到）— CARSON
+var PROTECTED_FOOTER_BRAND = decodeFooterText([67, 65, 82, 83, 79, 78]);
+// 版权解锁码（码点编码存储）— CARSON2026
+var FOOTER_UNLOCK_CODE = decodeFooterText([67, 65, 82, 83, 79, 78, 50, 48, 50, 54]);
+
+// 解锁版权保护：在浏览器控制台输入 __unlockFooterProtection('解锁码') 即可临时解除保护
+// 解锁后可修改 footer，刷新页面后保护自动恢复
+window.__unlockFooterProtection = function (code) {
+  if (code === FOOTER_UNLOCK_CODE) {
+    window.__footerProtectionUnlocked = true;
+    if (window.__globalFooterObserver) {
+      window.__globalFooterObserver.disconnect();
+      window.__globalFooterObserver = null;
+    }
+    console.log('版权保护已解锁，可临时修改。刷新页面后恢复保护。');
+    return true;
+  }
+  console.log('解锁码错误，保护未解除。');
+  return false;
+};
+
 function renderProtectedFooter() {
   var footer = document.querySelector('footer.footer');
   if (!footer) {
@@ -711,8 +732,8 @@ function renderProtectedFooter() {
   }
   footer.id = 'globalFooter';
   footer.setAttribute('data-protected-footer', '1');
-  // 编码"麦氏乡村"，与检查条件一致
-  var brand = decodeFooterText([40614, 27663, 20065, 26449]);
+  // 品牌名使用模块级常量（码点编码存储，避免明文）
+  var brand = PROTECTED_FOOTER_BRAND;
   var year = decodeFooterText([50, 48, 50, 54]);
 
   // 不再替换整个 innerHTML，改为只追加/更新版权信息，保留工具栏按钮的事件监听
@@ -764,11 +785,13 @@ function protectGlobalFooter() {
   // 仅监听 footer 自身的子节点变化和文本变化，不再监听整个 body 子树
   window.__globalFooterObserver = new MutationObserver(function (mutations) {
     if (isRendering) return;
+    // 已解锁则不再强制恢复，允许临时修改
+    if (window.__footerProtectionUnlocked) return;
     for (var i = 0; i < mutations.length; i++) {
       var m = mutations[i];
       if (m.type === 'childList' || m.type === 'characterData') {
         var footer = document.querySelector('footer.footer[data-protected-footer="1"]');
-        if (!footer || !footer.textContent.includes('麦氏乡村')) {
+        if (!footer || !footer.textContent.includes(PROTECTED_FOOTER_BRAND)) {
           isRendering = true;
           renderProtectedFooter();
           isRendering = false;
@@ -836,30 +859,29 @@ function checkMaintenanceMode(settings) {
     return;
   }
 
-  // 检查用户角色：管理员不受维护模式影响
+  // 已登录用户（管理员或普通用户）不受维护模式影响，只有游客需要输密码
   var frontToken = localStorage.getItem('frontToken');
   var frontRole = localStorage.getItem('frontRole');
-  if (frontToken && frontRole === 'admin') {
+  if (frontToken && (frontRole === 'admin' || frontRole === 'user')) {
     return;
   }
   // 如果有 token 但不确定角色，通过 API 验证（异步，先显示弹窗，验证通过后关闭）
   if (frontToken && !frontRole) {
-    // 先尝试获取用户信息
     fetch('/api/user/me', {
       headers: { 'Authorization': 'Bearer ' + frontToken }
     }).then(function (res) {
       if (res.ok) return res.json();
       throw new Error('unauthorized');
     }).then(function (user) {
-      if (user && user.role === 'admin') {
-        // 管理员，直接关闭弹窗
+      // 任何有效登录用户（管理员或普通用户）都直接关闭弹窗
+      if (user && (user.role === 'admin' || user.role === 'user')) {
         var overlay = document.getElementById('maintenanceOverlay');
         if (overlay) {
           overlay.remove();
           document.body.style.overflow = '';
         }
         sessionStorage.setItem('maintenanceVerified', 'true');
-        localStorage.setItem('frontRole', 'admin');
+        localStorage.setItem('frontRole', user.role);
       }
     }).catch(function () {
       // token 无效，继续显示弹窗
